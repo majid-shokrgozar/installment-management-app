@@ -283,6 +283,7 @@ fun LoanItem(
                     )
                     
                     if (nextDueDate != null) {
+                        val remainingDays = DateUtils.getRemainingDaysText(nextDueDate)
                         if (hasOverdue) {
                             // نمایش تاریخ سررسید در یک چیپسی قرمز برای وام‌های معوقه
                             Surface(
@@ -291,7 +292,7 @@ fun LoanItem(
                                 border = androidx.compose.foundation.BorderStroke(1.dp, overdueColor.copy(alpha = 0.5f))
                             ) {
                                 Text(
-                                    text = DateUtils.toPersianDate(nextDueDate),
+                                    text = "${DateUtils.toPersianDate(nextDueDate)} $remainingDays",
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                     fontSize = 12.sp,
                                     color = overdueColor,
@@ -300,7 +301,7 @@ fun LoanItem(
                             }
                         } else {
                             Text(
-                                text = DateUtils.toPersianDate(nextDueDate),
+                                text = "${DateUtils.toPersianDate(nextDueDate)} $remainingDays",
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )

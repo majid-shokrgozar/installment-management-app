@@ -9,4 +9,15 @@ object DateUtils {
         val jalali = JalaliCalendar(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
         return "${jalali.year}/${String.format("%02d", jalali.month)}/${String.format("%02d", jalali.day)}"
     }
+
+    fun getRemainingDaysText(dueDate: LocalDate): String {
+        val today = LocalDate.now()
+        val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(today, dueDate)
+
+        return when {
+            daysBetween > 0 -> "($daysBetween روز مانده)"
+            daysBetween < 0 -> "(${Math.abs(daysBetween)} روز گذشته)"
+            else -> "(امروز)"
+        }
+    }
 }

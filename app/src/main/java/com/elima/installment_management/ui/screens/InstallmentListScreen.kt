@@ -147,7 +147,7 @@ fun InstallmentItem(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "تاریخ سررسید: ${DateUtils.toPersianDate(installment.dueDate)}",
+                        text = "تاریخ سررسید: ${DateUtils.toPersianDate(installment.dueDate)} ${if (installment.paymentStatus != PaymentStatus.PAID) DateUtils.getRemainingDaysText(installment.dueDate) else ""}",
                         fontSize = 14.sp,
                         color = if (installment.paymentStatus == PaymentStatus.PAID || isOverdue) 
                             contentColor.copy(alpha = 0.8f) else Color.Gray
