@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +24,14 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,6 +42,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.elima.installment_management.data.SettingsManager
 import com.elima.installment_management.ui.screens.AddLoanScreen
 import com.elima.installment_management.ui.screens.InstallmentListScreen
 import com.elima.installment_management.ui.screens.LoanListScreen
@@ -68,9 +73,22 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            val context = LocalContext.current
+            val settingsManager = remember { SettingsManager(context) }
+            var themeMode by remember { mutableIntStateOf(settingsManager.themeMode) }
+
+            val darkTheme = when (themeMode) {
+                1 -> false
+                2 -> true
+                else -> isSystemInDarkTheme()
+            }
+
+            MyApplicationTheme(darkTheme = darkTheme) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    MyApplicationApp(loanViewModel)
+                    MyApplicationApp(
+                        loanViewModel = loanViewModel,
+                        onThemeChanged = { themeMode = it }
+                    )
                 }
             }
         }
@@ -91,7 +109,10 @@ class MainActivity : ComponentActivity() {
 
 @PreviewScreenSizes
 @Composable
-fun MyApplicationApp(loanViewModel: LoanViewModel? = null) {
+fun MyApplicationApp(
+    loanViewModel: LoanViewModel? = null,
+    onThemeChanged: (Int) -> Unit = {}
+) {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.LOANS) }
 
     NavigationSuiteScaffold(
@@ -121,7 +142,7 @@ fun MyApplicationApp(loanViewModel: LoanViewModel? = null) {
                             Text(text = "Loading...")
                         }
                     }
-                    AppDestinations.SETTINGS -> SettingsScreen()
+                    AppDestinations.SETTINGS -> SettingsScreen(onThemeChanged = onThemeChanged)
                     AppDestinations.PROFILE -> Text(text = stringResource(R.string.menu_profile))
                 }
             }

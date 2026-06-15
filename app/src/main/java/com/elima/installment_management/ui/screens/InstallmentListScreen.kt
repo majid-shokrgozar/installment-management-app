@@ -1,5 +1,6 @@
 package com.elima.installment_management.ui.screens
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -106,19 +107,29 @@ fun InstallmentItem(
 ) {
     val currencyFormat = NumberFormat.getInstance(Locale("fa", "IR"))
     val today = LocalDate.now()
+    val isDarkTheme = isSystemInDarkTheme()
     
     // تشخیص وضعیت سررسید گذشته
     val isOverdue = installment.paymentStatus != PaymentStatus.PAID && installment.dueDate.isBefore(today)
+
+    val backgroundColor = when {
+        installment.paymentStatus == PaymentStatus.PAID -> if (isDarkTheme) Color(0xFF1B5E20) else Color(0xFFE8F5E9)
+        isOverdue -> if (isDarkTheme) Color(0xFFB71C1C) else Color(0xFFFFEBEE)
+        else -> MaterialTheme.colorScheme.surface
+    }
+
+    val contentColor = when {
+        installment.paymentStatus == PaymentStatus.PAID -> if (isDarkTheme) Color.White else Color(0xFF2E7D32)
+        isOverdue -> if (isDarkTheme) Color.White else Color(0xFFC62828)
+        else -> MaterialTheme.colorScheme.onSurface
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                installment.paymentStatus == PaymentStatus.PAID -> Color(0xFFE8F5E9)
-                isOverdue -> Color(0xFFFFEBEE) // رنگ قرمز ملایم برای قسط معوقه
-                else -> MaterialTheme.colorScheme.surface
-            }
+            containerColor = backgroundColor,
+            contentColor = contentColor
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -132,19 +143,20 @@ fun InstallmentItem(
                         text = "قسط شماره ${installment.sequenceNumber}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = if (isOverdue) Color(0xFFC62828) else Color.Unspecified
+                        color = contentColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "تاریخ سررسید: ${DateUtils.toPersianDate(installment.dueDate)}",
                         fontSize = 14.sp,
-                        color = if (isOverdue) Color(0xFFC62828) else Color.Gray
+                        color = if (installment.paymentStatus == PaymentStatus.PAID || isOverdue) 
+                            contentColor.copy(alpha = 0.8f) else Color.Gray
                     )
                     if (installment.paymentStatus == PaymentStatus.PAID && installment.paymentDate != null) {
                         Text(
                             text = "تاریخ پرداخت: ${DateUtils.toPersianDate(installment.paymentDate)}",
                             fontSize = 12.sp,
-                            color = Color(0xFF4CAF50)
+                            color = if (isDarkTheme) Color.White.copy(alpha = 0.9f) else Color(0xFF2E7D32)
                         )
                     }
                     if (isOverdue) {
@@ -152,7 +164,7 @@ fun InstallmentItem(
                             text = "سررسید گذشته",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFC62828)
+                            color = if (isDarkTheme) Color.White else Color(0xFFC62828)
                         )
                     }
                 }
@@ -160,7 +172,8 @@ fun InstallmentItem(
                     Text(
                         text = "${currencyFormat.format(installment.amount)} ریال",
                         fontWeight = FontWeight.Medium,
-                        color = if (isOverdue) Color(0xFFC62828) else MaterialTheme.colorScheme.primary
+                        color = if (installment.paymentStatus == PaymentStatus.PAID || isOverdue) 
+                            contentColor else MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     StatusChip(

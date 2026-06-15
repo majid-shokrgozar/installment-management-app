@@ -6,14 +6,20 @@ import com.elima.installment_management.data.model.Installment
 import com.elima.installment_management.data.model.LoanFacility
 import com.elima.installment_management.data.repository.LoanRepository
 import ir.huri.jcal.JalaliCalendar
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
 class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     val allLoans: StateFlow<List<LoanFacility>> = repository.allLoans.stateIn(
         scope = viewModelScope,
@@ -26,6 +32,17 @@ class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            // در اینجا می‌توان منطق به‌روزرسانی داده‌ها را قرار داد
+            // برای مثال اگر داده‌ها از سرور می‌آمدند در اینجا فراخوانی می‌شدند
+            // در این برنامه چون داده‌ها محلی هستند، صرفاً یک تأخیر کوتاه برای نمایش انیمیشن رفرش قرار می‌دهیم
+            delay(1000)
+            _isRefreshing.value = false
+        }
+    }
 
     fun addLoan(loan: LoanFacility) {
         addLoanWithPaidInstallments(loan, 0)

@@ -1,5 +1,6 @@
 package com.elima.installment_management.ui.screens
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,14 +11,17 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.elima.installment_management.data.model.LoanWithInstallments
 import com.elima.installment_management.data.model.PaymentStatus
 import com.elima.installment_management.ui.viewmodel.LoanViewModel
@@ -35,10 +39,26 @@ fun LoanListScreen(
     onEditLoanClick: (Int) -> Unit
 ) {
     val loansWithInstallments by viewModel.loansWithInstallments.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     var selectedLoan by remember { mutableStateOf<LoanWithInstallments?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // رفرش کردن لیست هنگام باز شدن برنامه و بازگشت از پس‌زمینه
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -47,32 +67,36 @@ fun LoanListScreen(
             }
         }
     ) { padding ->
-        if (loansWithInstallments.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "هیچ تسهیلاتی ثبت نشده است", fontSize = 18.sp)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(loansWithInstallments) { item ->
-                    LoanItem(
-                        item,
-                        onInstallmentsClick = { onLoanClick(item.loan.id) },
-                        onShowClick = {
-                            selectedLoan = item
-                            showBottomSheet = true
-                        }
-                    )
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (loansWithInstallments.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "هیچ تسهیلاتی ثبت نشده است", fontSize = 18.sp)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(loansWithInstallments) { item ->
+                        LoanItem(
+                            item,
+                            onInstallmentsClick = { onLoanClick(item.loan.id) },
+                            onShowClick = {
+                                selectedLoan = item
+                                showBottomSheet = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -207,12 +231,16 @@ fun LoanItem(
     
     // تشخیص اینکه آیا وام قسط معوقه دارد یا خیر
     val hasOverdue = installments.any { it.paymentStatus != PaymentStatus.PAID && it.dueDate.isBefore(today) }
+    
+    val isDarkTheme = isSystemInDarkTheme()
+    val overdueColor = if (isDarkTheme) Color(0xFFE57373) else Color(0xFFC62828)
+    val overdueBackground = if (isDarkTheme) Color(0xFF311B1B) else Color(0xFFFFEBEE)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (hasOverdue) Color(0xFFFFEBEE) else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (hasOverdue) overdueBackground else MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column {
@@ -229,7 +257,7 @@ fun LoanItem(
                     CircularProgressIndicator(
                         progress = { progress },
                         modifier = Modifier.size(45.dp),
-                        color = if (hasOverdue) Color(0xFFC62828) else MaterialTheme.colorScheme.primary,
+                        color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         strokeWidth = 5.dp
                     )
@@ -237,7 +265,7 @@ fun LoanItem(
                         text = "${(progress * 100).toInt()}%",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                        color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -251,22 +279,22 @@ fun LoanItem(
                         text = "${loan.title} (${loan.providerName})",
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                        color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     if (nextDueDate != null) {
                         if (hasOverdue) {
                             // نمایش تاریخ سررسید در یک چیپسی قرمز برای وام‌های معوقه
                             Surface(
-                                color = Color(0xFFC62828).copy(alpha = 0.1f),
+                                color = overdueColor.copy(alpha = 0.1f),
                                 shape = MaterialTheme.shapes.small,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.5f))
+                                border = androidx.compose.foundation.BorderStroke(1.dp, overdueColor.copy(alpha = 0.5f))
                             ) {
                                 Text(
                                     text = DateUtils.toPersianDate(nextDueDate),
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                     fontSize = 12.sp,
-                                    color = Color(0xFFC62828),
+                                    color = overdueColor,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -288,13 +316,13 @@ fun LoanItem(
                         Text(
                             text = "مبلغ قسط:", 
                             fontSize = 14.sp,
-                            color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                            color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         val installmentAmount = loan.installmentAmount ?: (if (totalCount > 0) loan.principalAmount / totalCount else 0.0)
                         Text(
                             text = formatCurrency(installmentAmount), 
                             fontWeight = FontWeight.Medium,
-                            color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                            color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -305,12 +333,12 @@ fun LoanItem(
                         Text(
                             text = "تعداد اقساط:", 
                             fontSize = 14.sp,
-                            color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                            color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "$paidCount از $totalCount پرداخت شده",
                             fontWeight = FontWeight.Medium,
-                            color = if (hasOverdue) Color(0xFFC62828) else Color.Unspecified
+                            color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

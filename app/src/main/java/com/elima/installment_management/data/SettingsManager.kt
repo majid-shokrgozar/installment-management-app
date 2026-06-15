@@ -17,4 +17,14 @@ class SettingsManager(context: Context) {
     var notificationMinute: Int
         get() = prefs.getInt("notification_minute", 0)
         set(value) = prefs.edit().putInt("notification_minute", value).apply()
+
+    /**
+     * Theme Mode:
+     * 0 -> System Default
+     * 1 -> Light Mode
+     * 2 -> Dark Mode
+     */
+    var themeMode: Int
+        get() = prefs.getInt("theme_mode", 0)
+        set(value) = prefs.edit().putInt("theme_mode", value).apply()
 }

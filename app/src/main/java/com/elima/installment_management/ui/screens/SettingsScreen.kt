@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,10 +23,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onThemeChanged: (Int) -> Unit = {}) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
     
+    var themeMode by remember { mutableIntStateOf(settingsManager.themeMode) }
     var daysBefore by remember { mutableIntStateOf(settingsManager.notificationDaysBefore) }
     var hour by remember { mutableIntStateOf(settingsManager.notificationHour) }
     var minute by remember { mutableIntStateOf(settingsManager.notificationMinute) }
@@ -85,6 +87,47 @@ fun SettingsScreen() {
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
+
+        // بخش ظاهر
+        SettingsCard(title = "ظاهر برنامه") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "تم برنامه:")
+                }
+                
+                var expanded by remember { mutableStateOf(false) }
+                val themeOptions = listOf(0, 1, 2)
+                val themeLabels = mapOf(0 to "پیش‌فرض سیستم", 1 to "روشن", 2 to "تیره")
+
+                Box {
+                    TextButton(onClick = { expanded = true }) {
+                        Text(text = themeLabels[themeMode] ?: "پیش‌فرض سیستم")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        themeOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(themeLabels[option] ?: "") },
+                                onClick = {
+                                    themeMode = option
+                                    settingsManager.themeMode = option
+                                    onThemeChanged(option)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         // بخش یادآور
         SettingsCard(title = "تنظیمات یادآور") {
