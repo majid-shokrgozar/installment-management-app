@@ -61,6 +61,11 @@ fun LoanListScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("مدیریت تسهیلات", fontWeight = FontWeight.Bold) }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddLoanClick) {
                 Icon(Icons.Default.Add, contentDescription = "افزودن تسهیلات")
@@ -256,20 +261,20 @@ fun LoanItem(
                 ) {
                     CircularProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.size(45.dp),
+                        modifier = Modifier.size(40.dp),
                         color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        strokeWidth = 5.dp
+                        strokeWidth = 4.dp
                     )
                     Text(
                         text = "${(progress * 100).toInt()}%",
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(
                     modifier = Modifier.weight(1f)
@@ -278,7 +283,7 @@ fun LoanItem(
                     Text(
                         text = "${loan.title} (${loan.providerName})",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
+                        fontSize = 17.sp,
                         color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
@@ -293,8 +298,8 @@ fun LoanItem(
                             ) {
                                 Text(
                                     text = "${DateUtils.toPersianDate(nextDueDate)} $remainingDays",
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontSize = 11.sp,
                                     color = overdueColor,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -302,13 +307,13 @@ fun LoanItem(
                         } else {
                             Text(
                                 text = "${DateUtils.toPersianDate(nextDueDate)} $remainingDays",
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 color = Color.Gray
                             )
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -316,12 +321,13 @@ fun LoanItem(
                     ) {
                         Text(
                             text = "مبلغ قسط:", 
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         val installmentAmount = loan.installmentAmount ?: (if (totalCount > 0) loan.principalAmount / totalCount else 0.0)
                         Text(
                             text = formatCurrency(installmentAmount), 
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -333,11 +339,12 @@ fun LoanItem(
                     ) {
                         Text(
                             text = "تعداد اقساط:", 
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "$paidCount از $totalCount پرداخت شده",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -348,33 +355,36 @@ fun LoanItem(
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 thickness = 0.5.dp,
-                color = Color.Gray.copy(alpha = 0.3f)
+                color = Color.Gray.copy(alpha = 0.2f)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
                     onClick = onShowClick,
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.height(32.dp)
                 ) {
-                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("نمایش")
+                    Text("نمایش", fontSize = 13.sp)
                 }
                 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 
                 Button(
                     onClick = onInstallmentsClick,
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.height(32.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("اقساط")
+                    Text("اقساط", fontSize = 13.sp)
                 }
             }
         }
