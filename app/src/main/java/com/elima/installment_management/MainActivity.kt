@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -44,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.elima.installment_management.data.SettingsManager
 import com.elima.installment_management.ui.screens.AddLoanScreen
+import com.elima.installment_management.ui.screens.DashboardScreen
 import com.elima.installment_management.ui.screens.InstallmentListScreen
 import com.elima.installment_management.ui.screens.LoanListScreen
 import com.elima.installment_management.ui.screens.SettingsScreen
@@ -113,7 +115,7 @@ fun MyApplicationApp(
     loanViewModel: LoanViewModel? = null,
     onThemeChanged: (Int) -> Unit = {}
 ) {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.LOANS) }
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.DASHBOARD) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -134,16 +136,15 @@ fun MyApplicationApp(
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentDestination) {
-                    AppDestinations.LOANS -> {
-                        if (loanViewModel != null) {
-                            LoanNavigation(loanViewModel)
-                        } else {
-                            Text(text = "Loading...")
-                        }
+                if (loanViewModel != null) {
+                    when (currentDestination) {
+                        AppDestinations.DASHBOARD -> DashboardScreen(loanViewModel)
+                        AppDestinations.LOANS -> LoanNavigation(loanViewModel)
+                        AppDestinations.SETTINGS -> SettingsScreen(onThemeChanged = onThemeChanged)
+                        AppDestinations.PROFILE -> Text(text = stringResource(R.string.menu_profile))
                     }
-                    AppDestinations.SETTINGS -> SettingsScreen(onThemeChanged = onThemeChanged)
-                    AppDestinations.PROFILE -> Text(text = stringResource(R.string.menu_profile))
+                } else {
+                    Text(text = "Loading...")
                 }
             }
         }
@@ -197,6 +198,7 @@ enum class AppDestinations(
     val labelRes: Int,
     val icon: ImageVector,
 ) {
+    DASHBOARD(R.string.menu_dashboard, Icons.Default.Dashboard),
     LOANS(R.string.menu_loans, Icons.Default.Home),
     SETTINGS(R.string.menu_settings, Icons.Default.Settings),
     PROFILE(R.string.menu_profile, Icons.Default.Person),
