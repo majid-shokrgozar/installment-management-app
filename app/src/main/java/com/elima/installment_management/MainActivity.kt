@@ -141,7 +141,6 @@ fun MyApplicationApp(
                         AppDestinations.DASHBOARD -> DashboardScreen(loanViewModel)
                         AppDestinations.LOANS -> LoanNavigation(loanViewModel)
                         AppDestinations.SETTINGS -> SettingsScreen(onThemeChanged = onThemeChanged)
-                        AppDestinations.PROFILE -> Text(text = stringResource(R.string.menu_profile))
                     }
                 } else {
                     Text(text = "Loading...")
@@ -201,7 +200,6 @@ enum class AppDestinations(
     DASHBOARD(R.string.menu_dashboard, Icons.Default.Dashboard),
     LOANS(R.string.menu_loans, Icons.Default.Home),
     SETTINGS(R.string.menu_settings, Icons.Default.Settings),
-    PROFILE(R.string.menu_profile, Icons.Default.Person),
 }
 
 @Preview(showBackground = true)

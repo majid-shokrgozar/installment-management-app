@@ -35,6 +35,7 @@ fun InstallmentListScreen(
 ) {
     val installments by viewModel.getInstallments(loanId).collectAsState(initial = emptyList())
     var selectedInstallmentId by remember { mutableStateOf<Int?>(null) }
+    var unpayInstallmentId by remember { mutableStateOf<Int?>(null) }
     
     val listState = rememberLazyListState()
 
@@ -80,10 +81,32 @@ fun InstallmentListScreen(
                 itemsIndexed(installments) { _, installment ->
                     InstallmentItem(
                         installment = installment,
-                        onPayClick = { selectedInstallmentId = installment.id }
+                        onPayClick = { selectedInstallmentId = installment.id },
+                        onUnpayClick = { unpayInstallmentId = installment.id }
                     )
                 }
             }
+        }
+
+        if (unpayInstallmentId != null) {
+            AlertDialog(
+                onDismissRequest = { unpayInstallmentId = null },
+                title = { Text("تغییر وضعیت پرداخت") },
+                text = { Text("آیا مطمئن هستید که می‌خواهید وضعیت این قسط را به «پرداخت نشده» تغییر دهید؟") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        unpayInstallmentId?.let { viewModel.unpayInstallment(it) }
+                        unpayInstallmentId = null
+                    }) {
+                        Text("بله، تغییر بده")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { unpayInstallmentId = null }) {
+                        Text("انصراف")
+                    }
+                }
+            )
         }
 
         if (selectedInstallmentId != null) {
@@ -103,7 +126,8 @@ fun InstallmentListScreen(
 @Composable
 fun InstallmentItem(
     installment: Installment,
-    onPayClick: () -> Unit
+    onPayClick: () -> Unit,
+    onUnpayClick: () -> Unit
 ) {
     val currencyFormat = NumberFormat.getInstance(Locale("fa", "IR"))
     val today = LocalDate.now()
@@ -140,7 +164,7 @@ fun InstallmentItem(
             ) {
                 Column {
                     Text(
-                        text = "قسط شماره ${installment.sequenceNumber}",
+                        text = "قسط شماره ${DateUtils.formatNumber(installment.sequenceNumber)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = contentColor
@@ -194,6 +218,23 @@ fun InstallmentItem(
                     )
                 ) {
                     Text("پرداخت", color = Color.White)
+                }
+            } else {
+                // دکمه بازگشت به وضعیت پرداخت نشده
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onUnpayClick,
+                    modifier = Modifier.align(Alignment.End),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (isDarkTheme) Color.White else Color(0xFF2E7D32)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, 
+                        if (isDarkTheme) Color.White.copy(alpha = 0.5f) else Color(0xFF2E7D32).copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text("تغییر به پرداخت نشده", fontSize = 12.sp)
                 }
             }
         }

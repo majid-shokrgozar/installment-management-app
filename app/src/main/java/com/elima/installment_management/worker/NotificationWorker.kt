@@ -6,6 +6,7 @@ import androidx.work.WorkerParameters
 import com.elima.installment_management.data.AppDatabase
 import com.elima.installment_management.data.SettingsManager
 import com.elima.installment_management.data.model.PaymentStatus
+import com.elima.installment_management.util.DateUtils
 import com.elima.installment_management.util.NotificationHelper
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -23,27 +24,45 @@ class NotificationWorker(
         notificationHelper.createNotificationChannel()
 
         val daysBefore = settingsManager.notificationDaysBefore
-        val targetDate = LocalDate.now().plusDays(daysBefore.toLong())
+        val today = LocalDate.now()
+        val targetDate = today.plusDays(daysBefore.toLong())
 
         val loansWithInstallments = database.loanDao().getLoansWithInstallments().first()
 
         for (item in loansWithInstallments) {
-            val upcomingInstallment = item.installments.find { 
-                it.paymentStatus != PaymentStatus.PAID && it.dueDate == targetDate 
-            }
+            val unpaidInstallments = item.installments.filter { it.paymentStatus != PaymentStatus.PAID }
 
-            if (upcomingInstallment != null) {
-                val message = if (daysBefore == 0) {
-                    "امروز موعد پرداخت قسط وام «${item.loan.title}» است."
-                } else {
-                    "$daysBefore روز تا موعد قسط وام «${item.loan.title}» باقی مانده است."
+            for (installment in unpaidInstallments) {
+                val dueDate = installment.dueDate
+                val daysUntilDue = java.time.temporal.ChronoUnit.DAYS.between(today, dueDate)
+
+                if (daysUntilDue == daysBefore.toLong()) {
+                    // ۱. یادآوری دقیقاً بر اساس تنظیمات (مثلاً ۳ روز قبل)
+                    val message = if (daysBefore == 0) {
+                        "امروز موعد پرداخت قسط وام «${item.loan.title}» است."
+                    } else {
+                        "${DateUtils.formatNumber(daysBefore)} روز تا موعد قسط وام «${item.loan.title}» باقی مانده است."
+                    }
+                    notificationHelper.showNotification(
+                        id = installment.id,
+                        title = "یادآور سررسید",
+                        message = message
+                    )
+                } else if (daysUntilDue == 0L && daysBefore != 0) {
+                    // ۲. یادآوری در روز سررسید (حتی اگر تنظیمات روی روزهای قبل باشد)
+                    notificationHelper.showNotification(
+                        id = installment.id,
+                        title = "موعد پرداخت قسط",
+                        message = "امروز موعد پرداخت قسط وام «${item.loan.title}» است."
+                    )
+                } else if (daysUntilDue < 0) {
+                    // ۳. یادآوری اقساط معوقه (تکرار هر روز تا زمان پرداخت)
+                    notificationHelper.showNotification(
+                        id = installment.id + 1000000,
+                        title = "قسط معوقه",
+                        message = "قسط وام «${item.loan.title}» مورخ ${DateUtils.toPersianDate(dueDate)} معوق شده است."
+                    )
                 }
-                
-                notificationHelper.showNotification(
-                    id = upcomingInstallment.id,
-                    title = "سررسید قسط",
-                    message = message
-                )
             }
         }
 

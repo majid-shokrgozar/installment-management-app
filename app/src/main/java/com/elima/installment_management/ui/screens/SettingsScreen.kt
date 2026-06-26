@@ -177,6 +177,23 @@ fun SettingsScreen(onThemeChanged: (Int) -> Unit = {}) {
                     Text(text = String.format(Locale.US, "%02d:%02d", hour, minute))
                 }
             }
+
+            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+            val notificationHelper = remember { com.elima.installment_management.util.NotificationHelper(context) }
+            OutlinedButton(
+                onClick = {
+                    notificationHelper.createNotificationChannel()
+                    notificationHelper.showNotification(
+                        id = 999,
+                        title = "تست اعلان",
+                        message = "این یک اعلان آزمایشی است. اگر آن را می‌بینید، یعنی سیستم اعلان فعال است."
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("ارسال اعلان آزمایشی")
+            }
         }
 
         // بخش پشتیبان‌گیری

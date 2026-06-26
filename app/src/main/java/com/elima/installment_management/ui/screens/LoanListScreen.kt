@@ -192,7 +192,7 @@ fun LoanDetailsContent(
         DetailRow("نام بانک/ارائه‌دهنده:", loan.providerName)
         DetailRow("مبلغ اصل وام:", formatCurrency(loan.principalAmount))
         DetailRow("مبلغ قسط:", formatCurrency(loan.installmentAmount ?: 0.0))
-        DetailRow("تعداد کل اقساط:", loan.installmentCount.toString())
+        DetailRow("تعداد کل اقساط:", DateUtils.formatNumber(loan.installmentCount))
         DetailRow("تاریخ دریافت:", DateUtils.toPersianDate(loan.startDate))
         loan.description?.let {
             if (it.isNotBlank()) {
@@ -267,7 +267,7 @@ fun LoanItem(
                         strokeWidth = 4.dp
                     )
                     Text(
-                        text = "${(progress * 100).toInt()}%",
+                        text = "${DateUtils.formatNumber((progress * 100).toInt())}٪",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
@@ -343,7 +343,7 @@ fun LoanItem(
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "$paidCount از $totalCount پرداخت شده",
+                            text = "${DateUtils.formatNumber(paidCount)} از ${DateUtils.formatNumber(totalCount)} پرداخت شده",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (hasOverdue) overdueColor else MaterialTheme.colorScheme.onSurfaceVariant

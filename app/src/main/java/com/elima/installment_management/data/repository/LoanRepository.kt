@@ -31,6 +31,10 @@ class LoanRepository(private val loanDao: LoanDao) {
         loanDao.updateInstallmentStatus(installmentId, PaymentStatus.PAID, paymentDate)
     }
 
+    suspend fun unpayInstallment(installmentId: Int) {
+        loanDao.updateInstallmentStatus(installmentId, PaymentStatus.PENDING, null)
+    }
+
     suspend fun deleteLoan(loan: LoanFacility) {
         loanDao.deleteLoan(loan)
     }

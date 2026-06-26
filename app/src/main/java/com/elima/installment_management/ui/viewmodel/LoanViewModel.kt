@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.elima.installment_management.data.model.Installment
 import com.elima.installment_management.data.model.LoanFacility
 import com.elima.installment_management.data.repository.LoanRepository
+import com.elima.installment_management.data.model.PaymentStatus
 import ir.huri.jcal.JalaliCalendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -27,11 +29,24 @@ class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
         initialValue = emptyList()
     )
 
-    val loansWithInstallments: StateFlow<List<com.elima.installment_management.data.model.LoanWithInstallments>> = repository.loansWithInstallments.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    val loansWithInstallments: StateFlow<List<com.elima.installment_management.data.model.LoanWithInstallments>> = 
+        repository.loansWithInstallments
+            .map { list ->
+                list.sortedBy { loanWithIns ->
+                    // پیدا کردن نزدیک‌ترین سررسید پرداخت نشده
+                    val nextDue = loanWithIns.installments
+                        .filter { it.paymentStatus != PaymentStatus.PAID }
+                        .minByOrNull { it.dueDate }?.dueDate
+                    
+                    // اگر همه پرداخت شده باشند، به انتهای لیست می‌روند
+                    nextDue ?: LocalDate.MAX
+                }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
 
     fun refresh() {
         viewModelScope.launch {
@@ -120,6 +135,12 @@ class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
     fun payInstallment(installmentId: Int, paymentDate: LocalDate) {
         viewModelScope.launch {
             repository.payInstallment(installmentId, paymentDate)
+        }
+    }
+
+    fun unpayInstallment(installmentId: Int) {
+        viewModelScope.launch {
+            repository.unpayInstallment(installmentId)
         }
     }
 
